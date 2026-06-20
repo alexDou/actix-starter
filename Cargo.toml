@@ -1,0 +1,53 @@
+[package]
+name = "actix_starter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web = "4"
+actix-cors = "0.7"
+actix-session = { version = "0.11", features = ["cookie-session"] }
+tokio = { version = "1.32", features = ["full"] }
+
+# Prometheus scraping instrumentation
+actix-web-prometheus = "0.1"
+
+# Serialization and Data Validation
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+validator = { version = "0.20", features = ["derive"] }
+
+# Cryptography & Auth Tokens
+jsonwebtoken = "10.4"
+bcrypt = "0.19"
+
+# Database & Cache Connection Pools
+sqlx = { version = "0.9", features = [
+  "runtime-tokio",
+  "tls-rustls",
+  "postgres",
+  "macros",
+  "time",
+  "uuid",
+  "json",
+  "migrate",
+] }
+time = { version = "0.3", features = [
+  "serde",
+  "formatting",
+  "parsing",
+  "macros",
+] }
+deadpool-redis = "0.23"
+
+# Apalis background worker pipeline structures
+apalis = { version = "0.7" }
+
+# System Utilities
+dotenvy = "0.15"
+uuid = { version = "1.4", features = ["v4", "serde"] }
+env_logger = "0.11"
+log = "0.4"
+thiserror = "2.0"
+derive_more = "2.1"
+futures-util = "0.3"
