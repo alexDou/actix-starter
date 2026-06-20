@@ -4,7 +4,7 @@ pub mod api {
         pub mod login;
         pub mod register;
     }
-    pub mod dashboard {
+    pub mod items {
         pub mod fetch;
     }
     pub mod monitoring {
@@ -19,9 +19,6 @@ pub mod domain {
             pub mod common;
             pub mod keys;
         }
-        pub mod model;
-    }
-    pub mod dashboard {
         pub mod model;
     }
     pub mod item {
