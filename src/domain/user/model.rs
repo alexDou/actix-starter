@@ -31,7 +31,7 @@ pub enum UserLookupField {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserQueryParameters<'uqp> {
+pub struct UserQueryParameters {
     pub col_name: UserLookupField,
-    pub value: &'uqp str,
+    pub value: String,
 }

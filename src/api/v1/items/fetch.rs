@@ -13,7 +13,7 @@ pub async fn fetch_user_items(
 ) -> Result<impl Responder, AppError> {
     let params = UserQueryParameters {
         col_name: UserLookupField::Id,
-        value: &user.user_id,
+        value: user.user_id.clone(),
     };
     let user = user_by_col_value(&pool, &params).await?;
     let items = items_by_user(&pool, &user.id).await?;

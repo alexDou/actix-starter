@@ -6,7 +6,7 @@ use crate::libs::errors::AppError;
 
 pub async fn user_by_col_value(
     pool: &web::Data<PgPool>,
-    params: &UserQueryParameters<'_>,
+    params: &UserQueryParameters,
 ) -> Result<User, AppError> {
     QueryBuilder::new(format!(
         "SELECT * FROM users WHERE {:?} = {}",
@@ -30,7 +30,8 @@ pub async fn create_user(
     .bind(&email)
     .bind(&password_hash)
     .fetch_one(pool.get_ref())
-    .await?;
+    .await
+    .map_err(|_| AppError::InternalServerError)?;
 
     Ok(user)
 }

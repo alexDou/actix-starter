@@ -233,6 +233,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-validator"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3539e2d27ebbe44c8baa585c4018004c6161d0dd5a0e8b72ab8a49a06a323460"
+dependencies = [
+ "actix-http",
+ "actix-router",
+ "actix-web",
+ "bytes",
+ "futures",
+ "futures-util",
+ "log",
+ "mime",
+ "serde",
+ "serde_json",
+ "serde_qs",
+ "serde_urlencoded",
+ "thiserror 2.0.18",
+ "validator",
+]
+
+[[package]]
 name = "actix_starter"
 version = "0.1.0"
 dependencies = [
@@ -240,6 +262,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "actix-web-prometheus",
+ "actix-web-validator",
  "apalis",
  "bcrypt",
  "deadpool-redis",
@@ -249,6 +272,7 @@ dependencies = [
  "futures-util",
  "jsonwebtoken",
  "log",
+ "regex",
  "serde",
  "serde_json",
  "sqlx",
@@ -2291,6 +2315,19 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "serde_qs"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd34f36fe4c5ba9654417139a9b3a20d2e1de6012ee678ad14d240c22c78d8d6"
+dependencies = [
+ "actix-web",
+ "futures",
+ "percent-encoding",
+ "serde",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

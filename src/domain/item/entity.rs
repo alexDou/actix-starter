@@ -1,9 +1,8 @@
 use actix_web::web;
 use sqlx::PgPool;
+use uuid::Uuid;
 
-use ::uuid::Uuid;
-
-use crate::domain::item::model::Item;
+use crate::domain::item::model::{Item, ItemCreate};
 use crate::libs::errors::AppError;
 
 pub async fn items_by_user(
@@ -16,4 +15,21 @@ pub async fn items_by_user(
         .await?;
 
     Ok(items)
+}
+
+pub async fn create_user_item(
+    pool: &web::Data<PgPool>,
+    values: &ItemCreate<'_>,
+) -> Result<Item, AppError> {
+    let item = sqlx::query_as::<_, Item>(
+        "INSERT INTO items i (user_id, name, description) VALUES($1, $2, $3) RETURNING i.*",
+    )
+    .bind(&values.user_id)
+    .bind(&values.item_payload.name)
+    .bind(&values.item_payload.description)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| AppError::InternalServerError)?;
+
+    Ok(item)
 }

@@ -1,13 +1,13 @@
-use std::env;
-use actix_session::Session;
+use actix_session::SessionExt;
 use actix_web::{Error, FromRequest, HttpRequest, dev::Payload, error::ErrorUnauthorized};
 use futures_util::future::{Ready, ready};
 use jsonwebtoken::{
     DecodingKey, EncodingKey, Header, Validation, decode, encode, errors::Error as JWTError,
 };
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use std::env;
 use time::{Duration, OffsetDateTime};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -51,21 +51,28 @@ impl FromRequest for AuthenticatedUser {
     type Error = Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
-    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
-        let req_jwt_token = req
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let req_jwt_token = match req
             .headers()
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
             .and_then(|s| s.strip_prefix("Bearer "))
-            .unwrap();
-        let jwt_secret = get_jwt_secret();
+        {
+            Some(token) => token,
+            None => {
+                return ready(Err(ErrorUnauthorized("Missing authentication data")));
+            }
+        };
 
-        let session_user_id = Session::from_request(req, payload)
-            .into_inner()
-            .unwrap()
-            .get::<String>("user_id")
-            .unwrap()
-            .unwrap();
+        let jwt_secret = get_jwt_secret();
+        let session_user_id = match req.get_session().get::<String>("user_id") {
+            Ok(Some(id)) => id,
+            _ => {
+                return ready(Err(ErrorUnauthorized(
+                    "Missing confirmation of request authorisation",
+                )));
+            }
+        };
 
         match decode::<Claims>(
             req_jwt_token,
@@ -74,7 +81,9 @@ impl FromRequest for AuthenticatedUser {
         ) {
             Ok(data) => {
                 if session_user_id != data.claims.sub {
-                    return ready(Err(ErrorUnauthorized("Failed to approve user authentication")));
+                    return ready(Err(ErrorUnauthorized(
+                        "Missing user authentication approval",
+                    )));
                 }
                 return ready(Ok(AuthenticatedUser {
                     user_id: data.claims.sub,
