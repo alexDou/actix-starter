@@ -8,6 +8,7 @@ pub enum AppError {
     InternalServerError,
     BadRequest(String),
     Unauthorized,
+    RefferenceError(String),
     DataValidationError(ValidationError),
 }
 
@@ -27,6 +28,9 @@ impl ResponseError for AppError {
             }
             AppError::Unauthorized => HttpResponse::Unauthorized()
                 .json(json!({ "error": "Unauthorized pipeline request" })),
+            AppError::RefferenceError(message) => {
+                HttpResponse::InternalServerError().json(json!({ "error": message }))
+            },
             AppError::DataValidationError(err) => {
                 HttpResponse::BadRequest().json(json!({ "error": err.to_owned().message }))
             }
@@ -38,6 +42,7 @@ impl ResponseError for AppError {
             AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::RefferenceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::DataValidationError(_) => StatusCode::BAD_REQUEST,
         }
     }

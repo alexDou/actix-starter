@@ -1,17 +1,16 @@
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::time::Duration;
 
-use crate::config::get_db_config;
+use crate::config::APP_CONFIG;
 
 pub async fn create_pool() -> PgPool {
-    let db_config = get_db_config().unwrap();
     let databse_url = format!(
         "postgres://{}:{}@{}:{}/{}",
-        db_config.user_name,
-        db_config.user_pwd,
-        db_config.host,
-        db_config.port,
-        db_config.db_name,
+        APP_CONFIG.db.user_name,
+        APP_CONFIG.db.user_pwd,
+        APP_CONFIG.db.host,
+        APP_CONFIG.db.port,
+        APP_CONFIG.db.db_name,
     );
 
     PgPoolOptions::new()

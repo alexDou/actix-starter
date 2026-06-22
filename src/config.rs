@@ -1,5 +1,5 @@
-use std::env;
 use regex::{Regex, RegexBuilder};
+use std::env;
 use std::sync::LazyLock;
 
 use crate::libs::errors::AppError;
@@ -23,79 +23,94 @@ pub struct APIConfig {
     pub cors_max_age: usize,
 }
 
-pub fn get_db_config() -> Result<DbConfig, AppError> {
-    let db_config = DbConfig {
-        host: match env::var("DATABASE_HOST") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        port: match env::var("DATABASE_PORT") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        db_name: match env::var("DATABASE_NAME") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        user_name: match env::var("DATABASE_USER") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        user_pwd: match env::var("DATABASE_USER_PWD") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-    };
-
-    Ok(db_config)
+#[derive(Debug)]
+pub struct AppConfig {
+    pub db: DbConfig,
+    pub api: APIConfig,
 }
 
-pub fn get_api_config() -> Result<APIConfig, AppError> {
-    let api_config = APIConfig {
-        host: match env::var("SERVER_HOST") {
-            Ok(val) => val,
-            _ => String::from("localhost"),
-        },
-        port: match env::var("SERVER_PORT") {
-            Ok(val) => val.parse::<u16>().unwrap(),
-            _ => 80,
-        },
-        jwt_secret: match env::var("JWT_SECRET") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        session_name: match env::var("SESSION_NAME") {
-            Ok(val) => val,
-            Err(_) => return Err(AppError::InternalServerError),
-        },
-        session_ttl_hrs: match env::var("SESSION_TTL_HRS") {
-            Ok(val) => val
-                .parse::<i64>()
-                .map_err(|_| AppError::InternalServerError)?,
-            _ => 18,
-        },
-        cors_max_age: match env::var("SESSION_TTL_HRS") {
-            Ok(val) => val
-                .parse::<usize>()
-                .map_err(|_| AppError::InternalServerError)?,
-            _ => 10,
-        },
-    };
+pub static APP_CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
+    AppConfig::load().expect("Fatal error: Failed to parse runtime application configuration")
+});
 
-    Ok(api_config)
+impl AppConfig {
+    fn load() -> Result<Self, AppError> {
+        dotenvy::dotenv().ok();
+
+        Ok(Self {
+            db: Self::load_db()?,
+            api: Self::load_api()?,
+        })
+    }
+
+    fn load_db() -> Result<DbConfig, AppError> {
+        Ok(DbConfig {
+            host: env::var("DATABASE_HOST").map_err(|_| {
+                AppError::RefferenceError(String::from("env::DATABASE_HOST is not set"))
+            })?,
+            port: env::var("DATABASE_PORT").map_err(|_| {
+                AppError::RefferenceError(String::from("env::DATABASE_PORT is not set"))
+            })?,
+            db_name: env::var("DATABASE_NAM").map_err(|_| {
+                AppError::RefferenceError(String::from("env::DATABASE_NAME is not set"))
+            })?,
+            user_name: env::var("DATABASE_USER").map_err(|_| {
+                AppError::RefferenceError(String::from("env::DATABASE_USER is not set"))
+            })?,
+            user_pwd: env::var("DATABASE_USER_PWD").map_err(|_| {
+                AppError::RefferenceError(String::from("env::DATABASE_USER_PWD is not set"))
+            })?,
+        })
+    }
+
+    fn load_api() -> Result<APIConfig, AppError> {
+        Ok(APIConfig {
+            host: env::var("SERVER_HOST").unwrap_or_else(|_| String::from("localhost")),
+
+            port: match env::var("SERVER_PORT") {
+                Ok(val) => val.parse::<u16>().map_err(|_| {
+                    AppError::RefferenceError(String::from("env::SERVER_HOST is not set"))
+                })?,
+                _ => 80,
+            },
+
+            jwt_secret: env::var("JWT_SECRET").map_err(|_| {
+                AppError::RefferenceError(String::from("env::JWT_SECRET is not set"))
+            })?,
+            session_name: env::var("SESSION_NAME").map_err(|_| {
+                AppError::RefferenceError(String::from("env::SESSION_NAME is not set"))
+            })?,
+
+            session_ttl_hrs: match env::var("SESSION_TTL_HRS") {
+                Ok(val) => val.parse::<i64>().map_err(|_| {
+                    AppError::RefferenceError(String::from("env::SESSION_TTL_HRS is not set"))
+                })?,
+                _ => 18,
+            },
+
+            cors_max_age: match env::var("CORS_MAX_AGE") {
+                Ok(val) => val.parse::<usize>().map_err(|_| {
+                    AppError::RefferenceError(String::from("env::CORS_MAX_AGE is not set"))
+                })?,
+                _ => 10,
+            },
+        })
+    }
 }
 
-pub const PASSWORD_SPECIAL_CHARS: &'static str = ",.-!?;:_@^*$%";
+pub const PASSWORD_SPECIAL_CHARS: &str = ",.-!?;:_@^*$%";
+
 pub static RE_ITEM_NAME: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = r"^[a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F 0-9_:\-]+$";
-    RegexBuilder::new(&pattern)
+    RegexBuilder::new(pattern)
         .case_insensitive(true)
         .build()
         .unwrap()
 });
+
 pub static RE_ITEM_DESCRIPTION: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = r#"^[a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F 0-9_,\.!\?%&\$\(\)#:"\-]+$"#;
-    RegexBuilder::new(&pattern)
+    RegexBuilder::new(pattern)
         .case_insensitive(true)
         .build()
         .unwrap()
