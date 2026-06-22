@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use validator::ValidationError;
 
-pub const ALLOWED_SPECIAL_CHARS: &'static str = ",.-!?;:_@^*$%";
+use crate::config::PASSWORD_SPECIAL_CHARS;
 
 fn create_error(code: &'static str, message: impl Into<Cow<'static, str>>) -> ValidationError {
     let mut error = ValidationError::new(code);
@@ -18,7 +18,7 @@ pub fn validate_password(password: &str) -> Result<(), ValidationError> {
                     up || c.is_ascii_uppercase(),
                     low || c.is_ascii_lowercase(),
                     digit || c.is_ascii_digit(),
-                    spec || ALLOWED_SPECIAL_CHARS.contains(c),
+                    spec || PASSWORD_SPECIAL_CHARS.contains(c),
                 )
             });
 
@@ -39,7 +39,7 @@ pub fn validate_password(password: &str) -> Result<(), ValidationError> {
             "missing_special",
             format!(
                 "Password must contain at least 1 special character: {}",
-                ALLOWED_SPECIAL_CHARS,
+                PASSWORD_SPECIAL_CHARS,
             ),
         )),
         _ => Ok(()),

@@ -7,30 +7,21 @@ use actix_web::{
     web,
 };
 use dotenvy::dotenv;
-use std::{env, io};
 use time::Duration;
 
-use actix_starter::libs::db;
 use actix_starter::api::routes::{private_routes, public_routes};
-use actix_starter::domain::auth::lib::common::get_jwt_secret;
-
-const DEFAULT_APP_PORT: &str = "80";
-const SESSION_NAME: &str = "a_session";
-const SESSION_TTL_HRS: i64 = 18;
+use actix_starter::config::get_api_config;
+use actix_starter::libs::db;
 
 #[actix_web::main]
-async fn main() -> io::Result<()> {
+async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let db_pool = db::create_pool().await;
-    let jwt_key = Key::from(get_jwt_secret().as_bytes());
+    let api_config = get_api_config().unwrap();
 
-    let app_host = env::var("SERVER_HOST").expect("App host must be set");
-    let app_port = env::var("SERVER_PORT")
-        .unwrap_or_else(|_| DEFAULT_APP_PORT.to_owned())
-        .parse::<u16>()
-        .expect("Invalid port");
+    let db_pool = db::create_pool().await;
+    let jwt_key = Key::from(api_config.jwt_secret.as_bytes());
 
     HttpServer::new(move || {
         App::new()
@@ -38,12 +29,13 @@ async fn main() -> io::Result<()> {
             .wrap(Logger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), jwt_key.clone())
-                    .cookie_name(SESSION_NAME.to_owned())
+                    .cookie_name(api_config.session_name.clone())
                     .cookie_secure(true)
                     .cookie_http_only(true)
                     .cookie_same_site(SameSite::Strict)
                     .session_lifecycle(
-                        PersistentSession::default().session_ttl(Duration::hours(SESSION_TTL_HRS)),
+                        PersistentSession::default()
+                            .session_ttl(Duration::hours(api_config.session_ttl_hrs)),
                     )
                     .build(),
             )
@@ -52,7 +44,7 @@ async fn main() -> io::Result<()> {
                     .allow_any_origin()
                     .allow_any_method()
                     .allow_any_header()
-                    .max_age(3600),
+                    .max_age(api_config.cors_max_age),
             )
             .wrap(Compress::default())
             .service(
@@ -61,7 +53,7 @@ async fn main() -> io::Result<()> {
                     .configure(private_routes),
             )
     })
-    .bind((app_host, app_port))?
+    .bind((api_config.host, api_config.port))?
     .run()
     .await
 }

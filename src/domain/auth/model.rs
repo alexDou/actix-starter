@@ -3,11 +3,13 @@ use validator::Validate;
 use regex::{Regex, RegexBuilder};
 use std::sync::LazyLock;
 
-use crate::domain::auth::lib::validator::{ALLOWED_SPECIAL_CHARS, validate_password};
+use crate::config::PASSWORD_SPECIAL_CHARS;
+
+use crate::domain::auth::lib::validator::validate_password;
 use crate::domain::user::model::UserResponse;
 
 pub static RE_PASSWORD: LazyLock<Regex> = LazyLock::new(|| {
-    let pattern = format!(r"^[a-z0-9_{}]{{8,128}}$", regex::escape(ALLOWED_SPECIAL_CHARS));
+    let pattern = format!(r"^[a-z0-9_{}]{{8,128}}$", regex::escape(PASSWORD_SPECIAL_CHARS));
     RegexBuilder::new(&pattern)
         .case_insensitive(true)
         .unicode(false)

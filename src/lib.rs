@@ -1,3 +1,5 @@
+pub mod config;
+
 #[path = "api/v1"]
 pub mod api {
     pub mod auth {
