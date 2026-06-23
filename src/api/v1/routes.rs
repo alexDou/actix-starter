@@ -2,7 +2,11 @@ use actix_web::web;
 
 use crate::api::auth::login::create_session;
 use crate::api::auth::register::create_register;
-use crate::api::items::{fetch::fetch_user_items, create::create_item};
+use crate::api::items::{
+    create::create_item,
+    fetch::{fetch_item, fetch_items},
+    update::update_item,
+};
 use crate::api::monitoring::internal::health_check;
 
 // Public routes
@@ -14,6 +18,9 @@ pub fn public_routes(cfg: &mut web::ServiceConfig) {
 
 // Protected routes
 pub fn private_routes(cfg: &mut web::ServiceConfig) {
-    cfg.route("/items", web::get().to(fetch_user_items));
+    // toDo: amin routes
+    cfg.route("/items/user/{uid}", web::get().to(fetch_items));
+    cfg.route("/item/{iid}", web::get().to(fetch_item));
     cfg.route("/item", web::post().to(create_item));
+    cfg.route("/item/{iid}", web::put().to(update_item));
 }

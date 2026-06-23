@@ -41,6 +41,7 @@ time = { version = "0.3", features = [
   "macros",
 ] }
 deadpool-redis = "0.23"
+actix-request-reply-cache = "^0.1"
 
 # Apalis background worker pipeline structures
 apalis = { version = "0.7" }
@@ -53,3 +54,8 @@ log = "0.4"
 thiserror = "2.0"
 derive_more = "2.1"
 futures-util = "0.3"
+
+# Cool crates, see if fit smw
+itertools = "0.15" # highly advanced functional methods 
+frunk = "0.4"      # deep structural, type-level functional programming
+im = "^15"         # thread-safe, blazingly fast immutable Vector, HashMap, and HashSet

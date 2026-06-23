@@ -1,12 +1,12 @@
 use actix_web::web;
 use sqlx::{PgPool, QueryBuilder};
 
-use crate::domain::user::model::{User, UserQueryParameters};
+use crate::domain::user::model::{User, UserDBQueryParameters};
 use crate::libs::errors::AppError;
 
 pub async fn user_by_col_value(
     pool: &web::Data<PgPool>,
-    params: &UserQueryParameters,
+    params: &UserDBQueryParameters,
 ) -> Result<User, AppError> {
     QueryBuilder::new(format!(
         "SELECT * FROM users WHERE {:?} = {}",

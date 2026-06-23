@@ -9,6 +9,7 @@ pub mod api {
     pub mod items {
         pub mod fetch;
         pub mod create;
+        pub mod update;
     }
     pub mod monitoring {
         pub mod internal;

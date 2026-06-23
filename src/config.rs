@@ -14,6 +14,13 @@ pub struct DbConfig {
 }
 
 #[derive(Debug)]
+pub struct RedisCacheConfig {
+    pub host: String,
+    pub port: String,
+    pub ttl: u64,
+}
+
+#[derive(Debug)]
 pub struct APIConfig {
     pub host: String,
     pub port: u16,
@@ -26,6 +33,7 @@ pub struct APIConfig {
 #[derive(Debug)]
 pub struct AppConfig {
     pub db: DbConfig,
+    pub cache: RedisCacheConfig,
     pub api: APIConfig,
 }
 
@@ -39,7 +47,25 @@ impl AppConfig {
 
         Ok(Self {
             db: Self::load_db()?,
+            cache: Self::load_cache()?,
             api: Self::load_api()?,
+        })
+    }
+
+    fn load_cache() -> Result<RedisCacheConfig, AppError> {
+        Ok(RedisCacheConfig {
+            host: env::var("REDIS_HOST").map_err(|_| {
+                AppError::RefferenceError(String::from("env::Redis_HOST is not set"))
+            })?,
+            port: env::var("REDIS_PORT").map_err(|_| {
+                AppError::RefferenceError(String::from("env::REDIS_PORT is not set"))
+            })?,
+            ttl: match env::var("REDIS_TTL") {
+                Ok(val) => val.parse::<u64>().map_err(|_| {
+                    AppError::RefferenceError(String::from("env::REDIS_TTL is not set"))
+                })?,
+                _ => 60,
+            },
         })
     }
 
@@ -51,7 +77,7 @@ impl AppConfig {
             port: env::var("DATABASE_PORT").map_err(|_| {
                 AppError::RefferenceError(String::from("env::DATABASE_PORT is not set"))
             })?,
-            db_name: env::var("DATABASE_NAM").map_err(|_| {
+            db_name: env::var("DATABASE_NAME").map_err(|_| {
                 AppError::RefferenceError(String::from("env::DATABASE_NAME is not set"))
             })?,
             user_name: env::var("DATABASE_USER").map_err(|_| {
@@ -98,7 +124,7 @@ impl AppConfig {
     }
 }
 
-pub const PASSWORD_SPECIAL_CHARS: &str = ",.-!?;:_@^*$%";
+pub static PASSWORD_SPECIAL_CHARS: &str = ",.-!?;:_@^*$%";
 
 pub static RE_ITEM_NAME: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = r"^[a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F 0-9_:\-]+$";

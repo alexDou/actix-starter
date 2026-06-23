@@ -1,11 +1,11 @@
-use actix_cors::Cors;
-use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use actix_web::{
     App, HttpServer,
     cookie::{Key, SameSite},
     middleware::{Compress, Logger},
     web,
 };
+use actix_cors::Cors;
+use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use time::Duration;
 
 use actix_starter::api::routes::{private_routes, public_routes};
@@ -17,12 +17,14 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let db_pool = db::create_pool().await;
+    let req_cache = db::create_redis_cache();
     let jwt_key = Key::from(APP_CONFIG.api.jwt_secret.as_bytes());
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(db_pool.clone()))
             .wrap(Logger::default())
+            .wrap(req_cache.clone())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), jwt_key.clone())
                     .cookie_name(APP_CONFIG.api.session_name.clone())

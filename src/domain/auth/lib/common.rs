@@ -43,6 +43,16 @@ pub fn create_jwt(user_id: &Uuid) -> Result<String, JWTError> {
     )
 }
 
+pub fn verify_request_by_params(user: &AuthenticatedUser, param_uid: &str /*role: &str*/) -> Result<bool, Error> {
+    //  check roles
+    /* role == user.role */
+    if param_uid != user.user_id {
+        return Err(ErrorUnauthorized("Request is not authorized"))
+    }
+    
+    Ok(true)
+}
+
 pub struct AuthenticatedUser {
     pub user_id: String,
 }

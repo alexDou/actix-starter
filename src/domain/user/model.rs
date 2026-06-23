@@ -31,7 +31,12 @@ pub enum UserLookupField {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserQueryParameters {
+pub struct UserDBQueryParameters {
     pub col_name: UserLookupField,
     pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserRequestParams {
+    pub uid: String,
 }

@@ -9,7 +9,7 @@ use crate::domain::auth::{
 };
 use crate::domain::user::{
     entity::user_by_col_value,
-    model::{UserLookupField, UserQueryParameters, UserResponse},
+    model::{UserLookupField, UserDBQueryParameters, UserResponse},
 };
 use crate::libs::errors::AppError;
 
@@ -19,7 +19,7 @@ pub async fn create_session(
     session: Session,
 ) -> Result<impl Responder, AppError> {
     let payload = body.into_inner();
-    let params = UserQueryParameters {
+    let params = UserDBQueryParameters {
         col_name: UserLookupField::Username,
         value: payload.email,
     };
