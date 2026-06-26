@@ -1,6 +1,6 @@
-use actix_request_reply_cache::{RedisCacheMiddleware, RedisCacheMiddlewareBuilder};
+use redis;
 use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use crate::config::APP_CONFIG;
 
@@ -24,15 +24,11 @@ pub async fn create_pool() -> PgPool {
         .expect("Failed to create unified database connection pool")
 }
 
-pub fn create_redis_cache() -> Arc<RedisCacheMiddleware> {
-    Arc::new(
-        RedisCacheMiddlewareBuilder::new(format!(
-            "redis://{}:{}",
-            APP_CONFIG.cache.host, APP_CONFIG.cache.port
-        ))
-        .ttl(APP_CONFIG.cache.ttl)
-        .cache_prefix("actix-starter:")
-        .cache_if(|ctx| ctx.method == "GET")
-        .build(),
-    )
+pub fn create_redis_pool() -> redis::Client {
+    let redis_conn_url = format!(
+        "redis://{}:{}",
+        APP_CONFIG.cache.host, APP_CONFIG.cache.port,
+    );
+    
+    redis::Client::open(redis_conn_url).unwrap()
 }

@@ -1,6 +1,6 @@
 use actix_web::{HttpResponse, Responder, web};
-use sqlx::PgPool;
 
+use crate::config::AppData;
 use crate::domain::auth::lib::common::AuthenticatedUser;
 use crate::domain::auth::lib::common::verify_request_by_params;
 use crate::domain::item::{
@@ -14,7 +14,7 @@ use crate::domain::user::model::{
 use crate::libs::errors::AppError;
 
 pub async fn fetch_items(
-    pool: web::Data<PgPool>,
+    app_data: web::Data<AppData>,
     path_params: web::Path<UserRequestParams>,
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
@@ -26,8 +26,8 @@ pub async fn fetch_items(
         col_name: UserLookupField::Id,
         value: user.user_id.clone(),
     };
-    let user = user_by_col_value(&pool, &db_query_params).await?;
-    let items = items_by_user(&pool, &user.id).await?;
+    let user = user_by_col_value(app_data.pg_pool.clone(), &db_query_params).await?;
+    let items = items_by_user(app_data.pg_pool.clone(), &user.id).await?;
 
     Ok(HttpResponse::Ok().json(ItemsResponse {
         user: UserResponse {
@@ -42,12 +42,12 @@ pub async fn fetch_items(
 }
 
 pub async fn fetch_item(
-    pool: web::Data<PgPool>,
+    app_data: web::Data<AppData>,
     path_params: web::Path<ItemRequestParams>,
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
     let item_id = &path_params.into_inner().iid;
-    let item = user_item_by_id(&pool, &item_id, &user.user_id).await?;
+    let item = user_item_by_id(app_data.pg_pool.clone(), &item_id, &user.user_id).await?;
 
     Ok(HttpResponse::Ok().json(ItemResponse { item }))
 }

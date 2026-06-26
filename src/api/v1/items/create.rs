@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder, web};
 use actix_web_validator::Json;
-use sqlx::PgPool;
 
+use crate::config::AppData;
 use crate::domain::auth::lib::common::AuthenticatedUser;
 use crate::domain::item::{
     entity::create_user_item,
@@ -10,7 +10,7 @@ use crate::domain::item::{
 use crate::libs::errors::AppError;
 
 pub async fn create_item(
-    pool: web::Data<PgPool>,
+    app_data: web::Data<AppData>,
     body: Json<ItemRequestPayload>,
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
@@ -21,7 +21,7 @@ pub async fn create_item(
             description: body.description.to_owned(),
         },
     };
-    let item = create_user_item(&pool, &params).await?;
+    let item = create_user_item(app_data.pg_pool.clone(), &params).await?;
 
     Ok(HttpResponse::Ok().json(ItemResponse { item }))
 }

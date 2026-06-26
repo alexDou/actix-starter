@@ -9,22 +9,24 @@ use actix_session::{SessionMiddleware, config::PersistentSession, storage::Cooki
 use time::Duration;
 
 use actix_starter::api::routes::{private_routes, public_routes};
-use actix_starter::config::APP_CONFIG;
-use actix_starter::libs::db;
+use actix_starter::config::{APP_CONFIG, AppData, AppMetrics};
+use actix_starter::libs::{db, middleware::cache_middleware};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let db_pool = db::create_pool().await;
-    let req_cache = db::create_redis_cache();
     let jwt_key = Key::from(APP_CONFIG.api.jwt_secret.as_bytes());
+
+    let app_data = web::Data::new(AppData {
+        pg_pool: db::create_pool().await?,
+        metrics: AppMetrics::new(),
+    });
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(db_pool.clone()))
+            .app_data(app_data)
             .wrap(Logger::default())
-            .wrap(req_cache.clone())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), jwt_key.clone())
                     .cookie_name(APP_CONFIG.api.session_name.clone())
@@ -44,6 +46,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header()
                     .max_age(APP_CONFIG.api.cors_max_age),
             )
+            .wrap(cache_middleware)
             .wrap(Compress::default())
             .service(
                 web::scope("/api/v1")

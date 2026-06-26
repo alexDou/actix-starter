@@ -1,8 +1,8 @@
 use actix_session::Session;
 use actix_web::{HttpResponse, Responder, web};
 use actix_web_validator::Json;
-use sqlx::PgPool;
 
+use crate::config::AppData;
 use crate::domain::auth::{
     lib::{common::verify_password, keys::init_session},
     model::LoginRequest,
@@ -14,7 +14,7 @@ use crate::domain::user::{
 use crate::libs::errors::AppError;
 
 pub async fn create_session(
-    pool: web::Data<PgPool>,
+    app_data: web::Data<AppData>,
     body: Json<LoginRequest>,
     session: Session,
 ) -> Result<impl Responder, AppError> {
@@ -23,7 +23,7 @@ pub async fn create_session(
         col_name: UserLookupField::Username,
         value: payload.email,
     };
-    let user = user_by_col_value(&pool, &params).await?;
+    let user = user_by_col_value(app_data.pg_pool.get_ref().clone(), &params).await?;
 
     match verify_password(&payload.password, &user.password_hash) {
         Ok(_) => {

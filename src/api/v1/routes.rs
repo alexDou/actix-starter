@@ -7,7 +7,7 @@ use crate::api::items::{
     fetch::{fetch_item, fetch_items},
     update::update_item,
 };
-use crate::api::monitoring::internal::health_check;
+use crate::api::monitoring::{internal::health_check, external::metrics_prometheus};
 
 // Public routes
 pub fn public_routes(cfg: &mut web::ServiceConfig) {
@@ -23,4 +23,6 @@ pub fn private_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/item/{iid}", web::get().to(fetch_item));
     cfg.route("/item", web::post().to(create_item));
     cfg.route("/item/{iid}", web::put().to(update_item));
+    // monitoring. protected by its own token
+    cfg.route("/item/{iid}", web::get().to(metrics_prometheus));
 }

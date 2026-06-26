@@ -7,11 +7,12 @@ pub mod api {
         pub mod register;
     }
     pub mod items {
-        pub mod fetch;
         pub mod create;
+        pub mod fetch;
         pub mod update;
     }
     pub mod monitoring {
+        pub mod external;
         pub mod internal;
     }
     pub mod routes;
@@ -39,4 +40,5 @@ pub mod domain {
 pub mod libs {
     pub mod db;
     pub mod errors;
+    pub mod middleware;
 }

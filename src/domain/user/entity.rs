@@ -5,7 +5,7 @@ use crate::domain::user::model::{User, UserDBQueryParameters};
 use crate::libs::errors::AppError;
 
 pub async fn user_by_col_value(
-    pool: &web::Data<PgPool>,
+    pool: PgPool,
     params: &UserDBQueryParameters,
 ) -> Result<User, AppError> {
     QueryBuilder::new(format!(
@@ -14,13 +14,13 @@ pub async fn user_by_col_value(
         params.value
     ))
     .build_query_as::<User>()
-    .fetch_optional(pool.get_ref())
+    .fetch_optional(&pool)
     .await?
     .ok_or_else(|| AppError::BadRequest(String::from("Invalid application login credentials")))
 }
 
 pub async fn create_user(
-    pool: &web::Data<PgPool>,
+    pool: PgPool,
     email: &str,
     password_hash: &str,
 ) -> Result<User, AppError> {
@@ -29,7 +29,7 @@ pub async fn create_user(
     )
     .bind(&email)
     .bind(&password_hash)
-    .fetch_one(pool.get_ref())
+    .fetch_one(&pool)
     .await
     .map_err(|_| AppError::InternalServerError)?;
 

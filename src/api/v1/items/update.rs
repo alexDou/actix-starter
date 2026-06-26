@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder, web};
 use actix_web_validator::Json;
-use sqlx::PgPool;
 
+use crate::config::AppData;
 use crate::domain::auth::lib::common::AuthenticatedUser;
 use crate::domain::item::{
     entity::update_user_item,
@@ -10,21 +10,20 @@ use crate::domain::item::{
 use crate::libs::errors::AppError;
 
 pub async fn update_item(
-    pool: web::Data<PgPool>,
+    app_data: web::Data<AppData>,
     path_params: web::Path<ItemRequestParams>,
     body: Json<ItemRequestPayload>,
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
-    let item_id = &path_params.into_inner().iid;
     let params = ItemUpdate {
-        item_id,
+        item_id: &path_params.into_inner().iid,
         user_id: &user.user_id,
         item_payload: ItemRequestPayload {
             name: body.name.to_owned(),
             description: body.description.to_owned(),
         },
     };
-    let item = update_user_item(&pool, &params).await?;
+    let item = update_user_item(app_data.pg_pool.clone(), &params).await?;
 
     Ok(HttpResponse::Ok().json(ItemResponse { item }))
 }

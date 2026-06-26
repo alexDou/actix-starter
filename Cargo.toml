@@ -40,8 +40,7 @@ time = { version = "0.3", features = [
   "parsing",
   "macros",
 ] }
-deadpool-redis = "0.23"
-actix-request-reply-cache = "^0.1"
+redis = { version = "1", features = ["tls-rustls", "tokio-comp"] }
 
 # Apalis background worker pipeline structures
 apalis = { version = "0.7" }
