@@ -11,6 +11,7 @@ pub async fn create_register(
     body: Json<RegisterRequest>,
 ) -> Result<impl Responder, AppError> {
     let payload = body.into_inner();
+    
     let hash = hash_password(&payload.password).map_err(|_| AppError::InternalServerError)?;
     let user = create_user(app_data.pg_pool.clone(), &payload.email, &hash).await?;
 

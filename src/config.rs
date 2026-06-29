@@ -5,7 +5,7 @@ use prometheus_client::{
 };
 use regex::{Regex, RegexBuilder};
 use sqlx::PgPool;
-use std::{env, sync::LazyLock, fmt};
+use std::{env, fmt, sync::LazyLock};
 
 use crate::libs::errors::AppError;
 
@@ -47,6 +47,18 @@ impl fmt::Debug for AppMetrics {
 }
 
 #[derive(Debug)]
+pub enum EnvironmentEnum {
+    DEVELOPMENT,
+    PRODUCTION,
+    STAGING,
+}
+
+#[derive(Debug)]
+pub struct EnvironmentConfig {
+    pub environ: EnvironmentEnum,
+}
+
+#[derive(Debug)]
 pub struct DbConfig {
     pub host: String,
     pub port: String,
@@ -77,6 +89,7 @@ pub struct APIConfig {
 
 #[derive(Debug)]
 pub struct AppConfig {
+    pub environment: EnvironmentConfig,
     pub db: DbConfig,
     pub cache: RedisCacheConfig,
     pub api: APIConfig,
@@ -88,18 +101,28 @@ pub struct AppData {
     pub metrics: AppMetrics,
 }
 
-pub static APP_CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
-    AppConfig::load().unwrap()
-});
+pub static APP_CONFIG: LazyLock<AppConfig> = LazyLock::new(|| AppConfig::load().unwrap());
 
 impl AppConfig {
     fn load() -> Result<Self, AppError> {
         dotenvy::dotenv().ok();
 
         Ok(Self {
+            environment: Self::load_environment()?,
             db: Self::load_db()?,
             cache: Self::load_cache()?,
             api: Self::load_api()?,
+        })
+    }
+
+    fn load_environment() -> Result<EnvironmentConfig, AppError> {
+        Ok(EnvironmentConfig {
+            environ: match env::var("ENVIRONMENT").as_deref() {
+                Ok("development") => EnvironmentEnum::DEVELOPMENT,
+                Ok("staging") => EnvironmentEnum::STAGING,
+                Ok("production") => EnvironmentEnum::PRODUCTION,
+                _ => EnvironmentEnum::DEVELOPMENT,
+            },
         })
     }
 
