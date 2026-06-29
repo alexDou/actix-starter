@@ -1,17 +1,14 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, get, http::header::AUTHORIZATION, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, http::header::AUTHORIZATION, web};
 use prometheus_client::{
-    encoding::{EncodeLabelSet, text::encode},
-    metrics::{family::Family, gauge::Gauge},
-    registry::Registry,
+    encoding::text::encode,
 };
-use sqlx::PgPool;
-use std::{env, time::Duration};
+use std::{time::Duration};
 use tokio::time::timeout;
 
-use crate::config::{APP_CONFIG, AppData};
+use crate::config::{APP_CONFIG, AppData, DependencyLabels};
 use crate::libs::errors::AppError;
 
-pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) -> impl Responder {
+pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) -> Result<impl Responder, AppError> {
     let req_token = match req
         .headers()
         .get(AUTHORIZATION)
@@ -20,12 +17,12 @@ pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) 
     {
         Some(token) => token,
         None => {
-            return ready(Err(AppError::Unauthorized));
+            return Err(AppError::Unauthorized);
         }
     };
 
-    if String::from(&req_token) != APP_CONFIG.api.metrics_token {
-        return HttpResponse::Unauthorized().finish();
+    if String::from(req_token) != APP_CONFIG.api.metrics_token {
+        return Err(AppError::Unauthorized);
     }
 
     let probe_timeout = Duration::from_millis(APP_CONFIG.api.metrics_ttl);
@@ -33,7 +30,7 @@ pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) 
     // Ping postgres
     let is_pg_up = match timeout(
         probe_timeout,
-        sqlx::query("SELECT 1").execute(app_data.pg_pool.get_ref()),
+        sqlx::query("SELECT 1").execute(&app_data.pg_pool),
     )
     .await
     {
@@ -52,14 +49,14 @@ pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) 
     let redis_client = redis::Client::open(format!(
         "redis://{}:{}",
         APP_CONFIG.cache.host, APP_CONFIG.cache.port
-    ))?;
+    )).map_err(|_| AppError::InternalServerError )?;
     let redis_ping = async {
         match redis_client
             .clone()
             .get_multiplexed_async_connection()
             .await
         {
-            Ok(mut conn) => match redis::cmd("PING").query_async::<_, String>(&mut conn).await {
+            Ok(mut conn) => match redis::cmd("PING").exec_async(&mut conn).await {
                 Ok(_) => 1,
                 Err(_) => 0,
             },
@@ -82,10 +79,10 @@ pub async fn metrics_prometheus(req: HttpRequest, app_data: web::Data<AppData>) 
     let mut buffer = String::new();
     if let Err(e) = encode(&mut buffer, &app_data.metrics.registry) {
         log::error!("Failed to encode prometheus metrics: {}", e);
-        return HttpResponse::InternalServerError().finish();
+        return Err(AppError::InternalServerError);
     }
 
-    HttpResponse::Ok()
+    Ok(HttpResponse::Ok()
         .content_type("application/openmetrics-text; version=1.0.0; charset=utf-8")
-        .body(buffer)
+        .body(buffer))
 }

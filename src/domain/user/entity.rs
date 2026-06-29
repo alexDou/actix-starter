@@ -1,4 +1,3 @@
-use actix_web::web;
 use sqlx::{PgPool, QueryBuilder};
 
 use crate::domain::user::model::{User, UserDBQueryParameters};

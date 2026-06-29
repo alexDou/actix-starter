@@ -1,7 +1,7 @@
 use actix_web::{
     App, HttpServer,
     cookie::{Key, SameSite},
-    middleware::{Compress, Logger},
+    middleware::{Compress, Logger/* , from_fn */},
     web,
 };
 use actix_cors::Cors;
@@ -10,7 +10,7 @@ use time::Duration;
 
 use actix_starter::api::routes::{private_routes, public_routes};
 use actix_starter::config::{APP_CONFIG, AppData, AppMetrics};
-use actix_starter::libs::{db, middleware::cache_middleware};
+use actix_starter::libs::{db/* , middleware*/};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,13 +19,13 @@ async fn main() -> std::io::Result<()> {
     let jwt_key = Key::from(APP_CONFIG.api.jwt_secret.as_bytes());
 
     let app_data = web::Data::new(AppData {
-        pg_pool: db::create_pool().await?,
+        pg_pool: db::create_pool().await,
         metrics: AppMetrics::new(),
     });
 
     HttpServer::new(move || {
         App::new()
-            .app_data(app_data)
+            .app_data(app_data.clone())
             .wrap(Logger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), jwt_key.clone())
@@ -46,7 +46,8 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header()
                     .max_age(APP_CONFIG.api.cors_max_age),
             )
-            .wrap(cache_middleware)
+            // .wrap(from_fn(middleware::redis::cache_middleware)) # custom caching middleware
+            .wrap(db::caching_middleware())
             .wrap(Compress::default())
             .service(
                 web::scope("/api/v1")

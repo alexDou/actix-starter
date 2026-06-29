@@ -23,7 +23,7 @@ pub async fn create_session(
         col_name: UserLookupField::Username,
         value: payload.email,
     };
-    let user = user_by_col_value(app_data.pg_pool.get_ref().clone(), &params).await?;
+    let user = user_by_col_value(app_data.pg_pool.clone(), &params).await?;
 
     match verify_password(&payload.password, &user.password_hash) {
         Ok(_) => {

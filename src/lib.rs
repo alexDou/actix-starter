@@ -40,5 +40,8 @@ pub mod domain {
 pub mod libs {
     pub mod db;
     pub mod errors;
-    pub mod middleware;
+    pub mod middleware {
+        pub mod redis;
+        pub mod monitoing;
+    }
 }

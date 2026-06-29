@@ -1,13 +1,11 @@
-use actix_web::{http::header::AUTHORIZATION, web};
-use prometheus_client::registry::Registry;
 use prometheus_client::{
-    encoding::{EncodeLabelSet, text::encode},
+    encoding::EncodeLabelSet,
     metrics::{family::Family, gauge::Gauge},
     registry::Registry,
 };
 use regex::{Regex, RegexBuilder};
 use sqlx::PgPool;
-use std::{env, sync::LazyLock, time::Duration};
+use std::{env, sync::LazyLock, fmt};
 
 use crate::libs::errors::AppError;
 
@@ -16,7 +14,6 @@ pub struct DependencyLabels {
     pub dependency: String,
 }
 
-/// Centralized state for the Prometheus Registry and fast-access Metric Families
 pub struct AppMetrics {
     pub registry: Registry,
     pub dependency_health: Family<DependencyLabels, Gauge>,
@@ -37,6 +34,15 @@ impl AppMetrics {
             registry,
             dependency_health,
         }
+    }
+}
+
+impl fmt::Debug for AppMetrics {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("")
+            .field(&self.registry)
+            .field(&self.dependency_health)
+            .finish()
     }
 }
 
@@ -76,14 +82,14 @@ pub struct AppConfig {
     pub api: APIConfig,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AppData {
     pub pg_pool: PgPool,
     pub metrics: AppMetrics,
 }
 
 pub static APP_CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
-    AppConfig::load().expect("Fatal error: Failed to parse runtime application configuration")
+    AppConfig::load().unwrap()
 });
 
 impl AppConfig {

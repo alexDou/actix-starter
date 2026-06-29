@@ -1,3 +1,4 @@
+use actix_request_reply_cache::{RedisCacheMiddleware, RedisCacheMiddlewareBuilder};
 use redis;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::time::Duration;
@@ -29,6 +30,26 @@ pub fn create_redis_pool() -> redis::Client {
         "redis://{}:{}",
         APP_CONFIG.cache.host, APP_CONFIG.cache.port,
     );
-    
+
     redis::Client::open(redis_conn_url).unwrap()
+}
+
+pub fn caching_middleware() -> RedisCacheMiddleware {
+    let redis_conn_url = format!(
+        "redis://{}:{}",
+        APP_CONFIG.cache.host, APP_CONFIG.cache.port,
+    );
+
+    RedisCacheMiddlewareBuilder::new(redis_conn_url)
+        .ttl(APP_CONFIG.cache.ttl.clone())
+        .max_cacheable_size(512 * 1024)
+        .cache_prefix(&APP_CONFIG.cache.key_prefix)
+        .cache_if(|ctx| {
+            if ctx.method != "GET" {
+                return false;
+            }
+
+            true
+        })
+        .build()
 }
