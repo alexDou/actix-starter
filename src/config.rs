@@ -81,6 +81,7 @@ pub struct APIConfig {
     pub port: u16,
     pub jwt_secret: String,
     pub session_name: String,
+    pub session_secret: String,
     pub session_ttl_hrs: i64,
     pub cors_max_age: usize,
     pub metrics_token: String,
@@ -182,6 +183,9 @@ impl AppConfig {
             })?,
             session_name: env::var("SESSION_NAME").map_err(|_| {
                 AppError::RefferenceError(String::from("env::SESSION_NAME is not set"))
+            })?,
+            session_secret: env::var("SESSION_SECRET").map_err(|_| {
+                AppError::RefferenceError(String::from("env::SESSION_SECRET is not set"))
             })?,
             session_ttl_hrs: match env::var("SESSION_TTL_HRS") {
                 Ok(val) => val.parse::<i64>().map_err(|_| {

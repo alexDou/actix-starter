@@ -16,7 +16,7 @@ use actix_starter::libs::{db, logger /* , middleware*/};
 async fn main() -> std::io::Result<()> {
     logger::env_logger_init();
 
-    let jwt_key = Key::from(APP_CONFIG.api.jwt_secret.as_bytes());
+    let session_key = Key::from(APP_CONFIG.api.session_secret.as_bytes());
 
     let app_data = web::Data::new(AppData {
         pg_pool: db::create_pool().await,
@@ -28,9 +28,9 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_data.clone())
             .wrap(Logger::default())
             .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), jwt_key.clone())
+                SessionMiddleware::builder(CookieSessionStore::default(), session_key.clone())
                     .cookie_name(APP_CONFIG.api.session_name.clone())
-                    .cookie_secure(true)
+                    .cookie_secure(false)
                     .cookie_http_only(true)
                     .cookie_same_site(SameSite::Strict)
                     .session_lifecycle(

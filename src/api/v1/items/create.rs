@@ -11,14 +11,14 @@ use crate::libs::errors::AppError;
 
 pub async fn create_item(
     app_data: web::Data<AppData>,
-    body: Json<ItemRequestPayload>,
+    req_payload: Json<ItemRequestPayload>,
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
     let params = ItemCreate {
-        user_id: &user.user_id,
+        user_id: user.user_id,
         item_payload: ItemRequestPayload {
-            name: body.name.to_owned(),
-            description: body.description.to_owned(),
+            name: req_payload.name.clone(),
+            description: req_payload.description.clone(),
         },
     };
     let item = create_user_item(app_data.pg_pool.clone(), &params).await?;

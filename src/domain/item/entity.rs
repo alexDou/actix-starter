@@ -13,7 +13,7 @@ pub async fn items_by_user(pool: PgPool, user_id: &Uuid) -> Result<Vec<Item>, Ap
     Ok(items)
 }
 
-pub async fn user_item_by_id(pool: PgPool, item_id: &str, user_id: &str) -> Result<Item, AppError> {
+pub async fn user_item_by_id(pool: PgPool, item_id: &str, user_id: &Uuid) -> Result<Item, AppError> {
     let item = sqlx::query_as::<_, Item>("SELECT * FROM items WHERE id = $1 AND user_id = $2")
         .bind(&item_id)
         .bind(&user_id)
@@ -23,22 +23,20 @@ pub async fn user_item_by_id(pool: PgPool, item_id: &str, user_id: &str) -> Resu
     Ok(item)
 }
 
-pub async fn create_user_item(pool: PgPool, values: &ItemCreate<'_>) -> Result<Item, AppError> {
-    let item = sqlx::query_as::<_, Item>(
-        "INSERT INTO items i (user_id, name, description) VALUES($1, $2, $3) RETURNING i.*",
+pub async fn create_user_item(pool: PgPool, values: &ItemCreate) -> Result<Item, AppError> {
+    sqlx::query_as::<_, Item>(
+        "INSERT INTO items (user_id, name, description) VALUES($1, $2, $3) RETURNING *",
     )
     .bind(&values.user_id)
     .bind(&values.item_payload.name)
     .bind(&values.item_payload.description)
     .fetch_one(&pool)
     .await
-    .map_err(|_| AppError::InternalServerError)?;
-
-    Ok(item)
+    .map_err(|_| AppError::InternalServerError)
 }
 
-pub async fn update_user_item(pool: PgPool, values: &ItemUpdate<'_>) -> Result<Item, AppError> {
-    let item = sqlx::query_as::<_, Item>(
+pub async fn update_user_item(pool: PgPool, values: &ItemUpdate) -> Result<Item, AppError> {
+    sqlx::query_as::<_, Item>(
         "UPDATE items i SET(name, description) VALUES($3, $4) WHERE user_id = $1 AND id = $2 RETURNING i.*",
     )
     .bind(&values.user_id)
@@ -47,7 +45,5 @@ pub async fn update_user_item(pool: PgPool, values: &ItemUpdate<'_>) -> Result<I
     .bind(&values.item_payload.description)
     .fetch_one(&pool)
     .await
-    .map_err(|_| AppError::InternalServerError)?;
-
-    Ok(item)
+    .map_err(|_| AppError::InternalServerError)
 }

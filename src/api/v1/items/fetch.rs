@@ -9,7 +9,7 @@ use crate::domain::item::{
 };
 use crate::domain::user::entity::user_by_col_value;
 use crate::domain::user::model::{
-    UserDBQueryParameters, UserLookupField, UserRequestParams, UserResponse,
+    UserDBQueryParameters, UserRequestParams, UserResponse,
 };
 use crate::libs::errors::AppError;
 
@@ -22,10 +22,7 @@ pub async fn fetch_items(
         .map_err(|_| AppError::Unauthorized)
         .unwrap();
 
-    let db_query_params = UserDBQueryParameters {
-        col_name: UserLookupField::Id,
-        value: user.user_id.clone(),
-    };
+    let db_query_params = UserDBQueryParameters::by_id(user.user_id);
     let user = user_by_col_value(app_data.pg_pool.clone(), &db_query_params).await?;
     let items = items_by_user(app_data.pg_pool.clone(), &user.id).await?;
 

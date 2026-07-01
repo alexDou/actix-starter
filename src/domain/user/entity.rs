@@ -8,8 +8,9 @@ pub async fn user_by_col_value(
     params: &UserDBQueryParameters,
 ) -> Result<User, AppError> {
     QueryBuilder::new(format!(
-        "SELECT * FROM users WHERE {:?} = {}",
-        &params.col_name, params.value
+        "SELECT * FROM users WHERE {} = '{}'",
+        params.col_name.as_str(),
+        params.value
     ))
     .build_query_as::<User>()
     .fetch_optional(&pool)

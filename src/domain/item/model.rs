@@ -38,15 +38,15 @@ pub struct ItemRequestPayload {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ItemCreate<'ic> {
-    pub user_id: &'ic str,
+pub struct ItemCreate {
+    pub user_id: Uuid,
     pub item_payload: ItemRequestPayload,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ItemUpdate<'ic> {
-    pub item_id: &'ic str,
-    pub user_id: &'ic str,
+pub struct ItemUpdate {
+    pub item_id: String,
+    pub user_id: Uuid,
     pub item_payload: ItemRequestPayload,
 }
 

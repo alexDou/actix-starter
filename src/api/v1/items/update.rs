@@ -16,8 +16,8 @@ pub async fn update_item(
     user: AuthenticatedUser,
 ) -> Result<impl Responder, AppError> {
     let params = ItemUpdate {
-        item_id: &path_params.into_inner().iid,
-        user_id: &user.user_id,
+        item_id: path_params.into_inner().iid,
+        user_id: user.user_id,
         item_payload: ItemRequestPayload {
             name: body.name.to_owned(),
             description: body.description.to_owned(),

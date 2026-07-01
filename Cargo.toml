@@ -20,7 +20,7 @@ actix-web-validator = "7"
 regex = "^1.12"
 
 # Cryptography & Auth Tokens
-jsonwebtoken = "10.4"
+jsonwebtoken = { version = "10.4", features = ["use_pem", "rust_crypto"] }
 bcrypt = "0.19"
 
 # Database & Cache Connection Pools
@@ -51,11 +51,12 @@ dotenvy = "0.15"
 uuid = { version = "1.4", features = ["v4", "serde"] }
 env_logger = "0.11"
 log = "0.4"
-thiserror = "2.0" # todo: use thiserror for custom error struct
+thiserror = "2.0"                                      # todo: use thiserror for custom error struct
 derive_more = "2.1"
 futures-util = "0.3"
 
 # Cool crates, see if fit smw
-itertools = "0.15" # highly advanced functional methods 
-frunk = "0.4"      # deep structural, type-level functional programming
-im = "^15"         # thread-safe, blazingly fast immutable Vector, HashMap, and HashSet
+itertools = "0.15"     # highly advanced functional methods 
+frunk = "0.4"          # deep structural, type-level functional programming
+im = "^15"             # thread-safe, blazingly fast immutable Vector, HashMap, and HashSet
+async-trait = "0.1.89"

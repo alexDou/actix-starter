@@ -9,7 +9,7 @@ use crate::domain::auth::{
 };
 use crate::domain::user::{
     entity::user_by_col_value,
-    model::{UserLookupField, UserDBQueryParameters, UserResponse},
+    model::{UserDBQueryParameters, LoginResponse},
 };
 use crate::libs::errors::AppError;
 
@@ -19,22 +19,17 @@ pub async fn create_session(
     session: Session,
 ) -> Result<impl Responder, AppError> {
     let payload = body.into_inner();
-    let params = UserDBQueryParameters {
-        col_name: UserLookupField::Username,
-        value: payload.email,
-    };
+    let params = UserDBQueryParameters::by_email(payload.email);
+
     let user = user_by_col_value(app_data.pg_pool.clone(), &params).await?;
 
     match verify_password(&payload.password, &user.password_hash) {
         Ok(_) => {
-            init_session(&session, &user.id)?;
+            // re-generate on each successful login
+            let token = init_session(&session, &user.id)?;
 
-            Ok(HttpResponse::Ok().json(UserResponse {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                created_at: user.created_at,
-                updated_at: user.updated_at,
+            Ok(HttpResponse::Ok().json(LoginResponse {
+                token,
             }))
         }
         Err(_) => Err(AppError::Unauthorized),

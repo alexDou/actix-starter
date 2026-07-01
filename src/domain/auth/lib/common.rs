@@ -5,18 +5,15 @@ use jsonwebtoken::{
     DecodingKey, EncodingKey, Header, Validation, decode, encode, errors::Error as JWTError,
 };
 use serde::{Deserialize, Serialize};
-use std::env;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
+use crate::config::APP_CONFIG;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,
+    pub sub: Uuid,
     pub exp: i64,
-}
-
-pub fn get_jwt_secret() -> String {
-    env::var("JWT_SECRET").expect("Insufficient API configuration")
 }
 
 pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
@@ -28,33 +25,35 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, bcrypt::Bcryp
 }
 
 pub fn create_jwt(user_id: &Uuid) -> Result<String, JWTError> {
-    let secret = get_jwt_secret();
     let expiration = (OffsetDateTime::now_utc() + Duration::hours(24)).unix_timestamp();
 
     let claims = Claims {
-        sub: user_id.to_string(),
+        sub: user_id.clone(),
         exp: expiration,
     };
 
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
+        &EncodingKey::from_secret(APP_CONFIG.api.jwt_secret.as_bytes()),
     )
 }
 
-pub fn verify_request_by_params(user: &AuthenticatedUser, param_uid: &str /*role: &str*/) -> Result<bool, Error> {
+pub fn verify_request_by_params(
+    user: &AuthenticatedUser,
+    param_uid: &str, /*role: &str*/
+) -> Result<bool, Error> {
     //  check roles
     /* role == user.role */
-    if param_uid != user.user_id {
-        return Err(ErrorUnauthorized("Request is not authorized"))
+    if param_uid.to_string() != String::from(user.user_id) {
+        return Err(ErrorUnauthorized("Request is not authorized"));
     }
-    
+
     Ok(true)
 }
 
 pub struct AuthenticatedUser {
-    pub user_id: String,
+    pub user_id: Uuid,
 }
 
 impl FromRequest for AuthenticatedUser {
@@ -74,7 +73,6 @@ impl FromRequest for AuthenticatedUser {
             }
         };
 
-        let jwt_secret = get_jwt_secret();
         let session_user_id = match req.get_session().get::<String>("user_id") {
             Ok(Some(id)) => id,
             _ => {
@@ -86,11 +84,11 @@ impl FromRequest for AuthenticatedUser {
 
         match decode::<Claims>(
             req_jwt_token,
-            &DecodingKey::from_secret(jwt_secret.as_bytes()),
+            &DecodingKey::from_secret(APP_CONFIG.api.jwt_secret.as_bytes()),
             &Validation::default(),
         ) {
             Ok(data) => {
-                if session_user_id != data.claims.sub {
+                if session_user_id != String::from(data.claims.sub) {
                     return ready(Err(ErrorUnauthorized(
                         "Missing user authentication approval",
                     )));
